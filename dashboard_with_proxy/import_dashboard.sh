@@ -99,29 +99,26 @@ fi
 # ── 2. Import the dashboard ────────────────────────────────────────────────────
 echo "==> Importing dashboard from $SCRIPT_DIR/dashboard.json..."
 
-DASHBOARD_JSON=$(cat "$SCRIPT_DIR/dashboard.json")
+IMPORT_PAYLOAD=$(python3 -c "
+import json, sys
 
-IMPORT_PAYLOAD=$(python3 - <<PYEOF
-import json
+with open('$SCRIPT_DIR/dashboard.json') as f:
+    dash = json.load(f)
 
-dash = json.loads('''$DASHBOARD_JSON''')
-
-# Replace the placeholder datasource UID with the one we just created/found
-dash_str = json.dumps(dash).replace("PLACEHOLDER_DS_UID", "$DS_UID")
+dash_str = json.dumps(dash).replace('PLACEHOLDER_DS_UID', '$DS_UID')
 dash = json.loads(dash_str)
 
-dash["version"] = 0
-dash["id"] = None
+dash['version'] = 0
+dash['id'] = None
 
 payload = {
-    "dashboard": dash,
-    "overwrite": True,
-    "folderId": 0,
-    "inputs": [],
+    'dashboard': dash,
+    'overwrite': True,
+    'folderId': 0,
+    'inputs': [],
 }
 print(json.dumps(payload))
-PYEOF
-)
+")
 
 RESULT=$(gf_post "/api/dashboards/db" "$IMPORT_PAYLOAD")
 STATUS=$(echo "$RESULT" | python3 -c "import sys,json; r=json.load(sys.stdin); print(r.get('status','unknown'))")

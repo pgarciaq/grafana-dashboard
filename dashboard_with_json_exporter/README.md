@@ -141,7 +141,9 @@ Open the URL printed at the end.
 
 ## How the data model works
 
-Understanding this is key to interpreting the dashboard correctly.
+> **Important:** Understanding this section is key to interpreting the
+> dashboard correctly. The json\_exporter variant behaves differently from the
+> native and proxy variants.
 
 The Cost Management API returns daily costs with a `date` field
 (e.g., `2026-04-01`, `2026-04-02`, ...). json\_exporter converts these into
@@ -159,9 +161,25 @@ This means:
 - The **stat**, **pie**, and **table** panels use **instant queries**
   (evaluated at `time=now`), so they always return the latest scraped values
   and are **unaffected by the Grafana time picker**.
-- A separate **"Cost Trend"** time series panel tracks the total cost value
-  over scrape time — useful for monitoring when cost data changes, but not
-  for viewing daily breakdowns.
+
+### The "Cost Trend" panel starts empty — this is normal
+
+The **"Cost Trend (accumulates over scrape history)"** panel is a time series
+that plots the `ocp_cost_total_usd` metric over **Prometheus scrape timestamps**
+(wall-clock time), NOT over the API's daily `date` values.
+
+- **On day one**, this panel will show only a single data point (or a short
+  flat line) at today's timestamp. **This is expected.**
+- Over the following days, as Prometheus scrapes every 15 minutes, new data
+  points accumulate and the panel gradually builds a trend line.
+- After a week or more, you'll see a meaningful visualization of how total
+  cost evolves over real time.
+
+This is fundamentally different from the native/proxy variants, where the
+"Cost Trend" panel shows daily total cost from the API (one point per day,
+driven by the Grafana time picker). The json\_exporter variant tracks
+*scrape history* — useful for monitoring when cost data changes, but not
+for viewing daily breakdowns (use the bar chart for that).
 
 ### API time range
 
@@ -189,7 +207,7 @@ ensures the bar chart always shows ~30 bars. To change the window, edit the
 | Daily Cost per Project | Bar chart | `ocp_project_cost_total_usd` | Stacked bars (one per day, segments per project) using the `date` label as X-axis |
 | Total Cost This Month | Stat | `ocp_cost_total_usd` | Single number, color-coded by threshold |
 | Cost by Project | Pie chart | `sum by (project) (ocp_project_cost_total_usd)` | Proportional breakdown |
-| Cost Trend (Scrape History) | Time series | `ocp_cost_total_usd` | Total cost over scrape time (Prometheus timestamps) |
+| Cost Trend (accumulates over scrape history) | Time series | `ocp_cost_total_usd` | **Starts empty** — accumulates data points over days as Prometheus scrapes (see [note above](#the-cost-trend-panel-starts-empty--this-is-normal)) |
 | Daily Cost Detail | Table | `ocp_project_cost_total_usd` | Sortable/filterable table with date, project, cost |
 
 ---

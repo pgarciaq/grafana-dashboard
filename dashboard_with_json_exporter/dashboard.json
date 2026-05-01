@@ -152,8 +152,8 @@
       },
       {
         "id": 5,
-        "title": "Cost Trend (Scrape History)",
-        "description": "How the total cost metric evolves over time as Prometheus scrapes the API. This panel shows Prometheus scrape history (not the API's daily dates). Useful for monitoring when cost data changes.",
+        "title": "Cost Trend (accumulates over scrape history)",
+        "description": "This panel tracks how the total cost metric changes over time as Prometheus re-scrapes the API. It starts empty and accumulates data points with each scrape (every 15 min). Unlike the bar chart above, this does NOT show the API's daily cost dates — it shows real wall-clock time. Give it a few days to build up a meaningful trend line.",
         "type": "timeseries",
         "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
         "datasource": { "type": "prometheus", "uid": "PLACEHOLDER_DS_UID" },

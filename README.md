@@ -141,6 +141,13 @@ bash import_dashboard.sh
 
 **Requires:** json\_exporter v0.7+, Prometheus, Grafana. No Infinity plugin needed.
 
+> **Note:** The json\_exporter variant's "Cost Trend" panel behaves differently
+> from the native/proxy variants. Because Prometheus stores API data at scrape
+> time (not at the API's daily date), the Cost Trend panel **starts empty and
+> accumulates data points gradually** as Prometheus scrapes every 15 minutes.
+> Give it a few days to build a meaningful trend line. The other panels (bar
+> chart, stat, pie, table) display the full date range immediately.
+
 See [`dashboard_with_json_exporter/README.md`](dashboard_with_json_exporter/README.md)
 for details.
 

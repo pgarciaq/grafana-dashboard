@@ -172,6 +172,10 @@
               "cost": { "operation": "aggregate", "aggregations": ["sum"] }
             }
           }
+        },
+        {
+          "id": "rowsToFields",
+          "options": {}
         }
       ]
     },
