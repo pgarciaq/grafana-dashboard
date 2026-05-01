@@ -1,7 +1,8 @@
 # OpenShift Daily Costs by Project — Grafana Dashboard
 
-Time series dashboard showing **daily cost per OpenShift project** for the last 30 days,
-sourced from the Red Hat Cost Management API.
+Time series dashboard showing **daily cost per OpenShift project**,
+sourced from the Red Hat Cost Management API. The date range is driven by the
+Grafana time picker (default: last 30 days).
 
 ## Files
 
@@ -111,18 +112,11 @@ bash import_dashboard.sh
 
 ## Customization
 
-### Change the time range
+### Time range
 
-The API query uses `filter[time_scope_units]=day&filter[time_scope_value]=-30`
-(rolling last 30 days). To change it, edit the panel's query URL in `dashboard.json`
-or in the Grafana panel editor.
-
-| Scope | Parameters |
-|-------|------------|
-| Last 10 days | `filter[time_scope_units]=day&filter[time_scope_value]=-10` |
-| Last 30 days | `filter[time_scope_units]=day&filter[time_scope_value]=-30` |
-| Current month | `filter[time_scope_units]=month&filter[time_scope_value]=-1` |
-| Previous month | `filter[time_scope_units]=month&filter[time_scope_value]=-2` |
+The API query uses Grafana's built-in `${__from:date:YYYY-MM-DD}` and
+`${__to:date:YYYY-MM-DD}` variables, so the data automatically matches whatever
+you select in the Grafana time picker — last 7 days, last 90 days, custom range, etc.
 
 ### Change what cost is shown
 
@@ -144,6 +138,6 @@ The JSONata expression extracts `cost.total.value`. Other options:
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | "URL not allowed" in Grafana | Missing allowed hosts | Re-run `import_dashboard.sh` or add hosts manually |
-| Chart blank (current month, start of month) | Only 1 data point, can't draw a line | Use rolling day scope (`-30`) instead of month scope (`-1`) |
+| Chart blank (very narrow time range) | Only 1 data point, can't draw a line | Widen the Grafana time picker to at least 2 days |
 | 401 from API | Service account credentials expired | Update credentials in the Infinity datasource settings |
 | All values $0 | No cost model assigned in Cost Management | Assign a cost model with rates to the OCP source |
