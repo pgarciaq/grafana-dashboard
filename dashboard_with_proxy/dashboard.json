@@ -1,0 +1,134 @@
+{
+  "uid": "ocp-costs-by-project-proxy",
+  "title": "OpenShift Daily Costs by Project (proxy)",
+  "tags": [
+    "cost-management",
+    "openshift"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 37,
+  "version": 0,
+  "refresh": "1h",
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Daily Cost per OpenShift Project",
+      "gridPos": {
+        "h": 22,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "PLACEHOLDER_DS_UID"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "PLACEHOLDER_DS_UID"
+          },
+          "type": "json",
+          "parser": "backend",
+          "source": "url",
+          "url": "http://localhost:5050/ocp-costs-flat?start_date=${__from:date:YYYY-MM-DD}&end_date=${__to:date:YYYY-MM-DD}",
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          },
+          "root_selector": "",
+          "columns": [
+            {
+              "selector": "date",
+              "text": "date",
+              "type": "timestamp"
+            },
+            {
+              "selector": "project",
+              "text": "project",
+              "type": "string"
+            },
+            {
+              "selector": "cost",
+              "text": "cost",
+              "type": "number"
+            }
+          ],
+          "filters": []
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "renameByName": {},
+            "indexByName": {
+              "date": 0,
+              "project": 1,
+              "cost": 2
+            }
+          }
+        },
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "project"
+            ],
+            "keepFields": false
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "displayName": "${__field.labels.project}",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 5,
+            "showPoints": "never",
+            "lineInterpolation": "linear"
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "sum"
+          ]
+        }
+      }
+    }
+  ],
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {}
+}

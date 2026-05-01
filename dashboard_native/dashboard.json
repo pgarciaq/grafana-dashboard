@@ -4,7 +4,7 @@
     {
       "datasource": {
         "type": "yesoreyeram-infinity-datasource",
-        "uid": "dfkos92iegtmoc"
+        "uid": "PLACEHOLDER_DS_UID"
       },
       "fieldConfig": {
         "defaults": {
@@ -75,7 +75,7 @@
           ],
           "datasource": {
             "type": "yesoreyeram-infinity-datasource",
-            "uid": "dfkos92iegtmoc"
+            "uid": "PLACEHOLDER_DS_UID"
           },
           "filters": [],
           "parser": "backend",

@@ -2,7 +2,12 @@
 # import_dashboard.sh
 #
 # Configures the Infinity datasource in Grafana and imports the
-# "OpenShift Daily Costs by Project" dashboard.
+# "OpenShift Daily Costs by Project (proxy)" dashboard.
+#
+# This variant uses a local Flask proxy (cost_proxy.py) that handles
+# OAuth2 authentication and JSON flattening. The Infinity datasource
+# only needs to reach the proxy — no OAuth2 config needed on the
+# datasource itself.
 #
 # Usage:
 #   bash import_dashboard.sh [GRAFANA_URL] [USER] [PASSWORD]
@@ -19,10 +24,6 @@ GF_USER="${2:-admin}"
 GF_PASS="${3:-redhat}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-CLIENT_ID="YOUR_CLIENT_ID"
-CLIENT_SECRET="YOUR_CLIENT_SECRET"
-TOKEN_URL="https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token"
-
 AUTH="${GF_USER}:${GF_PASS}"
 
 gf_get()  { curl -sf -u "$AUTH" "$GRAFANA$1"; }
@@ -31,35 +32,39 @@ gf_put()  { curl -sf -X PUT   -u "$AUTH" -H "Content-Type: application/json" -d 
 
 echo "==> Grafana: $GRAFANA"
 
-# ── 1. Upsert the Infinity datasource ─────────────────────────────────────────
-echo "==> Configuring 'Cost Management API' datasource..."
+# ── 0. Verify the proxy is running ────────────────────────────────────────────
+echo "==> Checking proxy at http://localhost:5050..."
+if ! curl -sf http://localhost:5050/health > /dev/null 2>&1; then
+    echo "ERROR: proxy is not running. Start it first:" >&2
+    echo "  nohup python3 $SCRIPT_DIR/cost_proxy.py > /tmp/cost_proxy.log 2>&1 &" >&2
+    exit 1
+fi
+echo "    proxy is healthy"
 
-# Check whether a datasource with this name already exists
-EXISTING_UID=$(gf_get "/api/datasources/name/Cost%20Management%20API" 2>/dev/null \
+# ── 1. Upsert the Infinity datasource ─────────────────────────────────────────
+DS_NAME="Cost Management API (proxy)"
+DS_NAME_ENC="Cost%20Management%20API%20%28proxy%29"
+
+echo "==> Configuring '$DS_NAME' datasource..."
+
+EXISTING_UID=$(gf_get "/api/datasources/name/$DS_NAME_ENC" 2>/dev/null \
                | python3 -c "import sys,json; print(json.load(sys.stdin).get('uid',''))" 2>/dev/null || true)
 
 DS_PAYLOAD=$(python3 - <<PYEOF
 import json
 
 payload = {
-    "name": "Cost Management API",
+    "name": "$DS_NAME",
     "type": "yesoreyeram-infinity-datasource",
     "access": "proxy",
     "jsonData": {
-        "auth_method": "oauth2",
-        "oauth2_grant_type": "client_credentials",
-        "oauth2_token_url": "$TOKEN_URL",
-        "oauth2_client_id": "$CLIENT_ID",
-        "oauth2_scopes": "api.console",
         "allowedHosts": [
-            "console.redhat.com",
-            "https://console.redhat.com",
-            "sso.redhat.com"
+            "localhost:5050",
+            "http://localhost:5050",
+            "127.0.0.1:5050",
+            "http://127.0.0.1:5050"
         ],
     },
-    "secureJsonData": {
-        "oauth2ClientSecret": "$CLIENT_SECRET"
-    }
 }
 print(json.dumps(payload))
 PYEOF
@@ -67,21 +72,16 @@ PYEOF
 
 if [ -n "$EXISTING_UID" ]; then
     echo "    datasource exists (uid=$EXISTING_UID), updating..."
-    # Fetch full object so we preserve all fields, then patch jsonData
     FULL_DS=$(gf_get "/api/datasources/uid/$EXISTING_UID")
     MERGED=$(python3 - <<PYEOF
-import json, sys
+import json
 
-full   = json.loads('''$FULL_DS''')
-patch  = json.loads('''$DS_PAYLOAD''')
+full  = json.loads('''$FULL_DS''')
+patch = json.loads('''$DS_PAYLOAD''')
 
-# Merge jsonData (keep existing keys, add/overwrite patch keys)
 jd = full.get("jsonData", {}) or {}
 jd.update(patch["jsonData"])
 full["jsonData"] = jd
-
-# Always refresh the secret
-full["secureJsonData"] = patch["secureJsonData"]
 
 print(json.dumps(full))
 PYEOF
@@ -106,11 +106,10 @@ import json
 
 dash = json.loads('''$DASHBOARD_JSON''')
 
-# Replace datasource UID references with the one we just created/found
-dash_str = json.dumps(dash).replace("dfkos92iegtmoc", "$DS_UID")
+# Replace the placeholder datasource UID with the one we just created/found
+dash_str = json.dumps(dash).replace("PLACEHOLDER_DS_UID", "$DS_UID")
 dash = json.loads(dash_str)
 
-# Reset version so Grafana accepts the import
 dash["version"] = 0
 dash["id"] = None
 
