@@ -1,58 +1,60 @@
 # OpenShift Daily Costs by Project — Grafana Dashboard
 
-Time series dashboard showing **daily cost per OpenShift project**, sourced from the
-[Red Hat Cost Management API](https://console.redhat.com/api/cost-management/v1).
-The date range is driven by the Grafana time picker — select "Last 7 days",
-"Last 90 days", a custom range, etc. and the chart updates automatically.
+Three dashboard variants showing **OpenShift cost data per project**, sourced
+from the [Red Hat Cost Management API](https://console.redhat.com/api/cost-management/v1).
+Pick the variant that best fits your infrastructure.
 
 ## Repository structure
 
 ```
 ├── README.md                              ← this file
-├── dashboard_native/                      ← recommended: no external dependencies
+├── dashboard_native/                      ← Grafana + Infinity plugin (simplest)
 │   ├── README.md
-│   ├── dashboard.json                     ← Grafana dashboard (queries API directly)
-│   └── import_dashboard.sh               ← configures datasource + imports dashboard
-└── dashboard_with_proxy/                  ← alternative: Flask proxy handles auth
+│   ├── dashboard.json
+│   └── import_dashboard.sh
+├── dashboard_with_proxy/                  ← Flask proxy + Grafana + Infinity plugin
+│   ├── README.md
+│   ├── cost_proxy.py
+│   ├── dashboard.json
+│   └── import_dashboard.sh
+└── dashboard_with_json_exporter/          ← json_exporter + Prometheus + Grafana
     ├── README.md
-    ├── cost_proxy.py                      ← Flask server (OAuth2 + JSON flattening)
-    ├── dashboard.json                     ← Grafana dashboard (queries proxy)
-    └── import_dashboard.sh               ← checks proxy, configures datasource + imports
+    ├── json_exporter_config.yml
+    ├── prometheus_scrape.yml
+    ├── dashboard.json
+    └── import_dashboard.sh
 ```
 
 ---
 
-## Prerequisites (both variants)
+## Prerequisites (all variants)
 
-- **Grafana** with the [Infinity datasource plugin](https://grafana.com/grafana/plugins/yesoreyeram-infinity-datasource/) v3.x installed
 - A **Red Hat service account** with access to Cost Management
 
 ### Service account credentials used in this repo
 
 | Field | Value |
-|---|---|
+|-------|-------|
 | Client ID | `YOUR_CLIENT_ID` |
 | Client Secret | `YOUR_CLIENT_SECRET` |
 | Token URL | `https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token` |
 | Scopes | `api.console` |
 
-To use a different service account, update the credentials in either the import
-script (native variant) or `cost_proxy.py` (proxy variant).
-
 ---
 
-## Variant 1: `dashboard_native/` — JSONata (recommended)
+## Variant 1: `dashboard_native/` — JSONata (simplest)
 
 Grafana queries the Cost Management API **directly**. The Infinity datasource
 authenticates via OAuth2 and uses a JSONata expression to flatten the nested
 `data[].projects[].values[]` response into `{date, project, cost}` rows.
+The Grafana time picker drives the date range.
 
 ```bash
 cd dashboard_native
 bash import_dashboard.sh
 ```
 
-**Requires:** Grafana + Infinity plugin v3.x. Nothing else.
+**Requires:** Grafana + [Infinity plugin](https://grafana.com/grafana/plugins/yesoreyeram-infinity-datasource/) v3.x. Nothing else.
 
 See [`dashboard_native/README.md`](dashboard_native/README.md) for details.
 
@@ -78,16 +80,45 @@ See [`dashboard_with_proxy/README.md`](dashboard_with_proxy/README.md) for detai
 
 ---
 
+## Variant 3: `dashboard_with_json_exporter/` — Prometheus
+
+Cost data is scraped by [`json_exporter`](https://github.com/prometheus-community/json_exporter),
+stored in Prometheus, and queried via PromQL. json\_exporter handles OAuth2
+authentication natively — no proxy or token script needed.
+
+```bash
+# 1. Start json_exporter with the provided config
+cd dashboard_with_json_exporter
+json_exporter --config.file=json_exporter_config.yml &
+
+# 2. Add the scrape config from prometheus_scrape.yml to your prometheus.yml,
+#    then reload Prometheus.
+
+# 3. Import the Grafana dashboard
+bash import_dashboard.sh
+```
+
+**Requires:** json\_exporter v0.7+, Prometheus, Grafana. No Infinity plugin needed.
+
+See [`dashboard_with_json_exporter/README.md`](dashboard_with_json_exporter/README.md)
+for details.
+
+---
+
 ## When to use which
 
-| | Native (JSONata) | With Proxy |
-|---|---|---|
-| External dependencies | None | Python + Flask |
-| OAuth2 credentials stored in | Grafana datasource | `cost_proxy.py` |
-| Works if Grafana can't reach the API | No | Yes (proxy on a host that can) |
-| Extra processing (caching, filtering) | No | Easily extensible |
-| Proxy process must be kept running | No | Yes |
-| Recommended for most users | **Yes** | For special cases |
+| | Native (JSONata) | Flask Proxy | json\_exporter + Prometheus |
+|---|---|---|---|
+| External dependencies | None | Python + Flask | json\_exporter + Prometheus |
+| Grafana plugin needed | Infinity v3.x | Infinity v3.x | None (built-in Prometheus) |
+| OAuth2 credentials stored in | Grafana datasource | `cost_proxy.py` | `json_exporter_config.yml` |
+| Data persistence | None (live API calls) | None (live API calls) | Prometheus TSDB |
+| Historical data beyond API range | No | No | **Yes** (Prometheus retention) |
+| PromQL alerting | No | No | **Yes** (Alertmanager) |
+| Works if Grafana can't reach the API | No | Yes (proxy bridges) | Yes (json\_exporter bridges) |
+| Extra processing / caching | No | Extensible in Python | Prometheus storage + PromQL |
+| Complexity | Low | Medium | Higher (more services) |
+| Best for | Quick setup, minimal infra | Network-restricted Grafana | Existing Prometheus stack, alerting |
 
 ---
 
@@ -102,37 +133,35 @@ returns daily cost data grouped by OpenShift project. The response is deeply nes
 data[] → projects[] → values[] → cost.total.value
 ```
 
-The native variant flattens this with a JSONata expression:
+Each variant handles this differently:
 
-```jsonata
-$.data.projects.values.{"date": date, "project": project, "cost": cost.total.value}
-```
-
-The proxy variant does the same flattening in Python and serves a flat array.
+- **Native:** JSONata expression flattens inline:
+  `$.data.projects.values.{"date": date, "project": project, "cost": cost.total.value}`
+- **Proxy:** Python flattens in `cost_proxy.py` and serves a flat JSON array.
+- **json\_exporter:** JSONPath `{.data[*].projects[*].values[*]}` iterates
+  the nested structure and extracts labeled Prometheus metrics.
 
 ### Time range
 
-Both variants pass the Grafana time picker dates to the API using the
-`start_date` and `end_date` query parameters (via Grafana's built-in
-`${__from:date:YYYY-MM-DD}` and `${__to:date:YYYY-MM-DD}` variables).
-
-### Grafana transformations
-
-The dashboard applies two transformations to the flat table:
-
-1. **Organize fields** — ensures `date` is the first column (time axis)
-2. **Partition by values** on `project` — splits the table into one time
-   series frame per project, producing one colored line per project
+- **Native / Proxy:** The Grafana time picker drives the API query via
+  `start_date` and `end_date` parameters (Grafana's `${__from:date:YYYY-MM-DD}`
+  and `${__to:date:YYYY-MM-DD}` variables).
+- **json\_exporter:** Prometheus controls the scrape schedule (every 15 min).
+  The API is queried for the last 30 days. The `date` label from the API
+  response is used as the X-axis in the bar chart (not Prometheus timestamps).
+  Historical data beyond the API's range accumulates in Prometheus's TSDB.
 
 ---
 
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
-|---|---|---|
+|---------|-------|-----|
 | "URL not allowed" in Grafana | Missing allowed hosts in Infinity datasource | Re-run the `import_dashboard.sh` for your variant |
-| Chart blank with very narrow time range | Only 1 data point per series (can't draw a line) | Widen the Grafana time picker to at least 2 days |
-| 401 from API | Service account credentials expired or wrong | Update credentials in the import script or `cost_proxy.py` |
+| Chart blank with very narrow time range | Only 1 data point per series | Widen the Grafana time picker to at least 2 days |
+| 401 from API | Service account credentials expired or wrong | Update credentials in the appropriate config file |
 | All cost values are $0 | No cost model assigned in Cost Management | Assign a cost model with rates to the OCP source |
 | Proxy variant: "proxy is not running" | `cost_proxy.py` process died | Restart: `nohup python3 cost_proxy.py > /tmp/cost_proxy.log 2>&1 &` |
+| json\_exporter: "No data" in Grafana | Prometheus hasn't scraped yet, or was restarted without persistent volume | Wait 15 min, check `http://localhost:9090/targets`. Use `-v /path:/prometheus` for data persistence |
+| json\_exporter: probe returns 401 | OAuth2 config wrong | Check `json_exporter_config.yml` oauth2 section |
 | Legend shows "A" instead of project names | `displayName` not set correctly | Re-import the dashboard from the provided `dashboard.json` |

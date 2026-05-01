@@ -1,0 +1,41 @@
+---
+# json_exporter configuration for Red Hat Cost Management API
+#
+# Extracts OpenShift cost metrics from the Cost Management REST API
+# and exposes them as Prometheus metrics.
+#
+# Usage:
+#   json_exporter --config.file=json_exporter_config.yml
+#
+# Prometheus scrapes this exporter via:
+#   GET /probe?module=ocp_costs&target=<API_URL>
+
+modules:
+  ocp_costs:
+    http_client_config:
+      oauth2:
+        client_id: "YOUR_CLIENT_ID"
+        client_secret: "YOUR_CLIENT_SECRET"
+        token_url: "https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token"
+        scopes:
+          - "api.console"
+
+    metrics:
+      # Total cost across all projects (from meta.total)
+      - name: ocp_cost_total_usd
+        path: '{.meta.total.cost.total.value}'
+        help: 'Total OpenShift cost in USD for the queried period'
+
+      # Per-project, per-day cost breakdown
+      - name: ocp_project_cost
+        type: object
+        path: '{.data[*].projects[*].values[*]}'
+        help: 'OpenShift cost per project per day in USD'
+        labels:
+          project: '{.project}'
+          date: '{.date}'
+        values:
+          total_usd: '{.cost.total.value}'
+          raw_usd: '{.cost.raw.value}'
+          markup_usd: '{.cost.markup.value}'
+          usage_usd: '{.cost.usage.value}'

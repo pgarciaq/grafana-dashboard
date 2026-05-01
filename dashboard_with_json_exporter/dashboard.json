@@ -1,0 +1,263 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "ocp-costs-json-exporter",
+    "title": "OpenShift Daily Costs by Project (json_exporter)",
+    "description": "OpenShift cost data from the Red Hat Cost Management API, collected via json_exporter and stored in Prometheus.",
+    "tags": ["openshift", "cost-management", "json_exporter"],
+    "timezone": "browser",
+    "schemaVersion": 39,
+    "version": 1,
+    "refresh": "15m",
+    "time": {
+      "from": "now-5m",
+      "to": "now"
+    },
+    "fiscalYearStartMonth": 0,
+    "liveNow": false,
+    "panels": [
+      {
+        "id": 1,
+        "title": "Daily Cost per Project",
+        "description": "Daily cost per OpenShift project for the current billing month. The X-axis uses the API's date field (not the Prometheus scrape timestamp). Each bar segment represents one project's cost for that day.",
+        "type": "barchart",
+        "gridPos": { "h": 12, "w": 16, "x": 0, "y": 0 },
+        "datasource": { "type": "prometheus", "uid": "PLACEHOLDER_DS_UID" },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "ocp_project_cost_total_usd",
+            "legendFormat": "",
+            "instant": true,
+            "range": false,
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "fillOpacity": 80,
+              "gradientMode": "none",
+              "lineWidth": 1,
+              "axisBorderShow": false
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "orientation": "auto",
+          "xTickLabelRotation": -45,
+          "xTickLabelSpacing": 0,
+          "showValue": "never",
+          "stacking": "normal",
+          "groupWidth": 0.7,
+          "barWidth": 0.9,
+          "barRadius": 0.1,
+          "tooltip": { "mode": "multi", "sort": "desc" },
+          "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum"] },
+          "xField": "date"
+        },
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true,
+                "__name__": true,
+                "instance": true,
+                "job": true
+              }
+            }
+          },
+          {
+            "id": "groupingToMatrix",
+            "options": {
+              "columnField": "project",
+              "rowField": "date",
+              "valueField": "Value"
+            }
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Total Cost This Month",
+        "description": "Total cost across all OpenShift projects for the current month, as reported by the Cost Management API.",
+        "type": "stat",
+        "gridPos": { "h": 6, "w": 8, "x": 16, "y": 0 },
+        "datasource": { "type": "prometheus", "uid": "PLACEHOLDER_DS_UID" },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "ocp_cost_total_usd",
+            "legendFormat": "Total",
+            "instant": true,
+            "range": false
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 5000 },
+                { "color": "red", "value": 20000 }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "textMode": "auto",
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        }
+      },
+      {
+        "id": 3,
+        "title": "Cost by Project",
+        "description": "Proportional cost breakdown across OpenShift projects for the current month.",
+        "type": "piechart",
+        "gridPos": { "h": 6, "w": 8, "x": 16, "y": 6 },
+        "datasource": { "type": "prometheus", "uid": "PLACEHOLDER_DS_UID" },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum by (project) (ocp_project_cost_total_usd)",
+            "legendFormat": "{{project}}",
+            "instant": true,
+            "range": false
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "color": { "mode": "palette-classic" }
+          },
+          "overrides": []
+        },
+        "options": {
+          "pieType": "donut",
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+          "tooltip": { "mode": "single" }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Cost Trend (Scrape History)",
+        "description": "How the total cost metric evolves over time as Prometheus scrapes the API. This panel shows Prometheus scrape history (not the API's daily dates). Useful for monitoring when cost data changes.",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
+        "datasource": { "type": "prometheus", "uid": "PLACEHOLDER_DS_UID" },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "ocp_cost_total_usd",
+            "legendFormat": "Total cost",
+            "instant": false,
+            "range": true
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "fillOpacity": 15,
+              "gradientMode": "scheme",
+              "showPoints": "auto",
+              "pointSize": 5,
+              "spanNulls": true
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "tooltip": { "mode": "single" },
+          "legend": { "displayMode": "list", "placement": "bottom" }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Daily Cost Detail",
+        "description": "Raw daily cost values per project as reported by the Cost Management API. The 'Date' column comes from the API response, not the Prometheus scrape timestamp.",
+        "type": "table",
+        "gridPos": { "h": 10, "w": 24, "x": 0, "y": 20 },
+        "datasource": { "type": "prometheus", "uid": "PLACEHOLDER_DS_UID" },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "ocp_project_cost_total_usd",
+            "legendFormat": "",
+            "instant": true,
+            "range": false,
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": { "align": "auto", "filterable": true }
+          },
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "Value" },
+              "properties": [
+                { "id": "unit", "value": "currencyUSD" },
+                { "id": "displayName", "value": "Cost (USD)" }
+              ]
+            },
+            {
+              "matcher": { "id": "byName", "options": "date" },
+              "properties": [
+                { "id": "displayName", "value": "Date" }
+              ]
+            },
+            {
+              "matcher": { "id": "byName", "options": "project" },
+              "properties": [
+                { "id": "displayName", "value": "Project" }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showHeader": true,
+          "sortBy": [{ "displayName": "Date", "desc": true }],
+          "footer": { "show": false }
+        },
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true,
+                "__name__": true,
+                "instance": true,
+                "job": true
+              },
+              "indexByName": {
+                "date": 0,
+                "project": 1,
+                "Value": 2
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "templating": { "list": [] },
+    "annotations": { "list": [] }
+  },
+  "overwrite": true
+}
