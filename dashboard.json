@@ -1,0 +1,135 @@
+{
+  "id": 828142284926976,
+  "panels": [
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "dfkos92iegtmoc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 5,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "displayName": "${__field.labels.project}",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 22,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "columns": [
+            {
+              "selector": "date",
+              "text": "date",
+              "type": "timestamp"
+            },
+            {
+              "selector": "project",
+              "text": "project",
+              "type": "string"
+            },
+            {
+              "selector": "cost",
+              "text": "cost",
+              "type": "number"
+            }
+          ],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "dfkos92iegtmoc"
+          },
+          "filters": [],
+          "parser": "backend",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "http://localhost:5050/ocp-costs-flat",
+          "url_options": {
+            "data": "",
+            "method": "GET"
+          }
+        }
+      ],
+      "title": "Daily Cost per OpenShift Project",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "cost": 2,
+              "date": 0,
+              "project": 1
+            },
+            "renameByName": {}
+          }
+        },
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "project"
+            ],
+            "keepFields": false
+          }
+        }
+      ],
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "1h",
+  "schemaVersion": 37,
+  "tags": [
+    "cost-management",
+    "openshift"
+  ],
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "OpenShift Daily Costs by Project",
+  "uid": "ocp-costs-by-project",
+  "version": 4
+}
