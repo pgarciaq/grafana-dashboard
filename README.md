@@ -30,15 +30,23 @@ Pick the variant that best fits your infrastructure.
 ## Prerequisites (all variants)
 
 - A **Red Hat service account** with access to Cost Management
+- The service account's **Client ID** and **Client Secret** (from
+  [console.redhat.com/iam/service-accounts](https://console.redhat.com/iam/service-accounts))
 
-### Service account credentials used in this repo
+Credentials are **never stored in `dashboard.json`** files. All three variants
+read credentials from **environment variables** first, falling back to
+placeholder values in the config file:
 
-| Field | Value |
-|-------|-------|
-| Client ID | `YOUR_CLIENT_ID` |
-| Client Secret | `YOUR_CLIENT_SECRET` |
-| Token URL | `https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token` |
-| Scopes | `api.console` |
+```bash
+export COSTMGMT_CLIENT_ID="your-client-id"
+export COSTMGMT_CLIENT_SECRET="your-client-secret"
+```
+
+| Variant | Env vars read by | Fallback (edit directly) | When credentials are used |
+|---|---|---|---|
+| Native | `import_dashboard.sh` | Lines 22–23 of the script | Once, at import time — stored in Grafana's datasource config |
+| Proxy | `cost_proxy.py` | Lines 14–15 of the script | Every time the proxy starts |
+| json\_exporter | `envsubst` (see below) | Edit `json_exporter_config.yml` lines 17–18 | Every time json\_exporter starts |
 
 ---
 
@@ -51,8 +59,19 @@ The Grafana time picker drives the date range.
 
 ```bash
 cd dashboard_native
+
+# Option A: environment variables (recommended)
+export COSTMGMT_CLIENT_ID="your-client-id"
+export COSTMGMT_CLIENT_SECRET="your-client-secret"
+bash import_dashboard.sh
+
+# Option B: edit the script directly (lines 22–23)
+vi import_dashboard.sh
 bash import_dashboard.sh
 ```
+
+After import, the credentials live inside Grafana's datasource configuration
+(its internal database). You do not need to keep them in the script file.
 
 **Requires:** Grafana + [Infinity plugin](https://grafana.com/grafana/plugins/yesoreyeram-infinity-datasource/) v3.x. Nothing else.
 
@@ -70,7 +89,17 @@ special parsing or auth config needed.
 ```bash
 cd dashboard_with_proxy
 pip3 install --user flask requests
+
+# Option A: environment variables (recommended)
+export COSTMGMT_CLIENT_ID="your-client-id"
+export COSTMGMT_CLIENT_SECRET="your-client-secret"
 nohup python3 cost_proxy.py > /tmp/cost_proxy.log 2>&1 &
+
+# Option B: edit cost_proxy.py directly (lines 14–15)
+vi cost_proxy.py
+nohup python3 cost_proxy.py > /tmp/cost_proxy.log 2>&1 &
+
+# Then import the dashboard
 bash import_dashboard.sh
 ```
 
@@ -87,14 +116,20 @@ stored in Prometheus, and queried via PromQL. json\_exporter handles OAuth2
 authentication natively — no proxy or token script needed.
 
 ```bash
-# 1. Start json_exporter with the provided config
 cd dashboard_with_json_exporter
+
+# Option A: environment variables + envsubst (recommended)
+export COSTMGMT_CLIENT_ID="your-client-id"
+export COSTMGMT_CLIENT_SECRET="your-client-secret"
+envsubst < json_exporter_config.yml > /tmp/json_exporter_config.yml
+json_exporter --config.file=/tmp/json_exporter_config.yml &
+
+# Option B: edit json_exporter_config.yml directly (lines 17–18)
+vi json_exporter_config.yml
 json_exporter --config.file=json_exporter_config.yml &
 
-# 2. Add the scrape config from prometheus_scrape.yml to your prometheus.yml,
-#    then reload Prometheus.
-
-# 3. Import the Grafana dashboard
+# Then add the scrape config from prometheus_scrape.yml to your prometheus.yml,
+# reload Prometheus, and import the Grafana dashboard
 bash import_dashboard.sh
 ```
 
@@ -159,7 +194,7 @@ Each variant handles this differently:
 |---------|-------|-----|
 | "URL not allowed" in Grafana | Missing allowed hosts in Infinity datasource | Re-run the `import_dashboard.sh` for your variant |
 | Chart blank with very narrow time range | Only 1 data point per series | Widen the Grafana time picker to at least 2 days |
-| 401 from API | Service account credentials expired or wrong | Update credentials in the appropriate config file |
+| 401 from API | Service account credentials missing or wrong | Edit the credentials file for your variant (see table above) and re-run setup |
 | All cost values are $0 | No cost model assigned in Cost Management | Assign a cost model with rates to the OCP source |
 | Proxy variant: "proxy is not running" | `cost_proxy.py` process died | Restart: `nohup python3 cost_proxy.py > /tmp/cost_proxy.log 2>&1 &` |
 | json\_exporter: "No data" in Grafana | Prometheus hasn't scraped yet, or was restarted without persistent volume | Wait 15 min, check `http://localhost:9090/targets`. Use `-v /path:/prometheus` for data persistence |

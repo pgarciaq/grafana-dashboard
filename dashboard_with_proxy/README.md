@@ -26,13 +26,37 @@ Grafana  ──(Infinity, plain HTTP)──►  cost_proxy.py (localhost:5050)
   ```
 - A Red Hat service account with access to Cost Management
 
+## Configuring credentials
+
+The proxy reads credentials from environment variables, falling back to
+placeholder values in `cost_proxy.py` (lines 14–15):
+
+```bash
+export COSTMGMT_CLIENT_ID="your-client-id"
+export COSTMGMT_CLIENT_SECRET="your-client-secret"
+```
+
+Alternatively, edit `cost_proxy.py` directly and replace the
+`YOUR_CLIENT_ID` / `YOUR_CLIENT_SECRET` placeholders on lines 14–15.
+
+The proxy uses these credentials to obtain OAuth2 tokens from Red Hat SSO
+at runtime. No credentials are needed in Grafana or `dashboard.json`.
+
 ## Quick start
 
 ```bash
-# 1. Start the proxy
+pip3 install --user flask requests
+
+# Option A: environment variables (recommended)
+export COSTMGMT_CLIENT_ID="your-client-id"
+export COSTMGMT_CLIENT_SECRET="your-client-secret"
 nohup python3 cost_proxy.py > /tmp/cost_proxy.log 2>&1 &
 
-# 2. Configure datasource + import dashboard
+# Option B: edit the script directly
+vi cost_proxy.py   # replace placeholders on lines 14–15
+nohup python3 cost_proxy.py > /tmp/cost_proxy.log 2>&1 &
+
+# Then configure datasource + import dashboard
 bash import_dashboard.sh
 ```
 
@@ -63,14 +87,9 @@ If no dates are passed, the proxy defaults to the last 30 days.
 
 ### Credentials
 
-Hardcoded at the top of `cost_proxy.py`:
-
-```
-CLIENT_ID     = YOUR_CLIENT_ID
-CLIENT_SECRET = YOUR_CLIENT_SECRET
-```
-
-Edit those constants to use a different service account.
+The proxy reads `COSTMGMT_CLIENT_ID` and `COSTMGMT_CLIENT_SECRET` from
+environment variables. If not set, it falls back to the placeholder values
+in `cost_proxy.py` (lines 14–15).
 
 ### Keeping the proxy alive
 

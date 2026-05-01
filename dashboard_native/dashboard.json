@@ -1,135 +1,309 @@
 {
-  "id": 828142284926976,
+  "uid": "ocp-costs-by-project",
+  "title": "OpenShift Daily Costs by Project",
+  "description": "OpenShift cost data per project, queried directly from the Red Hat Cost Management API via the Infinity datasource with JSONata parsing.",
+  "tags": ["openshift", "cost-management"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1h",
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
   "panels": [
     {
-      "datasource": {
-        "type": "yesoreyeram-infinity-datasource",
-        "uid": "PLACEHOLDER_DS_UID"
-      },
+      "id": 1,
+      "title": "Daily Cost per Project",
+      "description": "Daily cost per OpenShift project for the selected time range. Each bar segment represents one project's cost for that day.",
+      "type": "barchart",
+      "gridPos": { "h": 12, "w": 16, "x": 0, "y": 0 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+          "type": "json",
+          "parser": "backend",
+          "source": "url",
+          "url": "https://console.redhat.com/api/cost-management/v1/reports/openshift/costs/?filter%5Bresolution%5D=daily&start_date=${__from:date:YYYY-MM-DD}&end_date=${__to:date:YYYY-MM-DD}&group_by%5Bproject%5D=*",
+          "url_options": { "method": "GET", "data": "" },
+          "root_selector": "$.data.projects.values.{\"date\": date, \"project\": project, \"cost\": cost.total.value}",
+          "columns": [
+            { "selector": "date", "text": "date", "type": "string" },
+            { "selector": "project", "text": "project", "type": "string" },
+            { "selector": "cost", "text": "cost", "type": "number" }
+          ],
+          "filters": []
+        }
+      ],
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
+          "unit": "currencyUSD",
+          "color": { "mode": "palette-classic" },
           "custom": {
-            "fillOpacity": 5,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "showPoints": "never"
-          },
-          "displayName": "${__field.labels.project}",
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "currencyUSD"
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "lineWidth": 1,
+            "axisBorderShow": false
+          }
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 22,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
-      "id": 1,
       "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull",
-            "sum"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "orientation": "auto",
+        "xTickLabelRotation": -45,
+        "xTickLabelSpacing": 0,
+        "showValue": "never",
+        "stacking": "normal",
+        "groupWidth": 0.7,
+        "barWidth": 0.9,
+        "barRadius": 0.1,
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum"] },
+        "xField": "date"
       },
-      "targets": [
+      "transformations": [
         {
-          "columns": [
-            {
-              "selector": "date",
-              "text": "date",
-              "type": "timestamp"
-            },
-            {
-              "selector": "project",
-              "text": "project",
-              "type": "string"
-            },
-            {
-              "selector": "cost",
-              "text": "cost",
-              "type": "number"
-            }
-          ],
-          "datasource": {
-            "type": "yesoreyeram-infinity-datasource",
-            "uid": "PLACEHOLDER_DS_UID"
-          },
-          "filters": [],
-          "parser": "backend",
-          "refId": "A",
-          "root_selector": "$.data.projects.values.{\"date\": date, \"project\": project, \"cost\": cost.total.value}",
-          "source": "url",
-          "type": "json",
-          "url": "https://console.redhat.com/api/cost-management/v1/reports/openshift/costs/?filter%5Bresolution%5D=daily&start_date=${__from:date:YYYY-MM-DD}&end_date=${__to:date:YYYY-MM-DD}&group_by%5Bproject%5D=*",
-          "url_options": {
-            "data": "",
-            "method": "GET"
+          "id": "groupingToMatrix",
+          "options": {
+            "columnField": "project",
+            "rowField": "date",
+            "valueField": "cost"
           }
         }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Total Cost This Month",
+      "description": "Total cost across all OpenShift projects for the selected time range.",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 0 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+          "type": "json",
+          "parser": "backend",
+          "source": "url",
+          "url": "https://console.redhat.com/api/cost-management/v1/reports/openshift/costs/?filter%5Bresolution%5D=daily&start_date=${__from:date:YYYY-MM-DD}&end_date=${__to:date:YYYY-MM-DD}&group_by%5Bproject%5D=*",
+          "url_options": { "method": "GET", "data": "" },
+          "root_selector": "$.data.projects.values.{\"date\": date, \"project\": project, \"cost\": cost.total.value}",
+          "columns": [
+            { "selector": "date", "text": "date", "type": "string" },
+            { "selector": "project", "text": "project", "type": "string" },
+            { "selector": "cost", "text": "cost", "type": "number" }
+          ],
+          "filters": []
+        }
       ],
-      "title": "Daily Cost per OpenShift Project",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5000 },
+              { "color": "red", "value": 20000 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["sum"] },
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "fields": "/^cost$/"
+      },
+      "transformations": []
+    },
+    {
+      "id": 3,
+      "title": "Cost by Project",
+      "description": "Proportional cost breakdown across OpenShift projects for the selected time range.",
+      "type": "piechart",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 6 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+          "type": "json",
+          "parser": "backend",
+          "source": "url",
+          "url": "https://console.redhat.com/api/cost-management/v1/reports/openshift/costs/?filter%5Bresolution%5D=daily&start_date=${__from:date:YYYY-MM-DD}&end_date=${__to:date:YYYY-MM-DD}&group_by%5Bproject%5D=*",
+          "url_options": { "method": "GET", "data": "" },
+          "root_selector": "$.data.projects.values.{\"date\": date, \"project\": project, \"cost\": cost.total.value}",
+          "columns": [
+            { "selector": "date", "text": "date", "type": "string" },
+            { "selector": "project", "text": "project", "type": "string" },
+            { "selector": "cost", "text": "cost", "type": "number" }
+          ],
+          "filters": []
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["sum"] },
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "tooltip": { "mode": "single" }
+      },
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "project": { "operation": "groupby", "aggregations": [] },
+              "cost": { "operation": "aggregate", "aggregations": ["sum"] }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Cost Trend",
+      "description": "Total daily cost across all projects over the selected time range. Each point is the sum of all project costs for that day.",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+          "type": "json",
+          "parser": "backend",
+          "source": "url",
+          "url": "https://console.redhat.com/api/cost-management/v1/reports/openshift/costs/?filter%5Bresolution%5D=daily&start_date=${__from:date:YYYY-MM-DD}&end_date=${__to:date:YYYY-MM-DD}&group_by%5Bproject%5D=*",
+          "url_options": { "method": "GET", "data": "" },
+          "root_selector": "$.data.projects.values.{\"date\": date, \"project\": project, \"cost\": cost.total.value}",
+          "columns": [
+            { "selector": "date", "text": "date", "type": "timestamp" },
+            { "selector": "project", "text": "project", "type": "string" },
+            { "selector": "cost", "text": "cost", "type": "number" }
+          ],
+          "filters": []
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "auto",
+            "pointSize": 5,
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "single" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      },
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "date": { "operation": "groupby", "aggregations": [] },
+              "cost": { "operation": "aggregate", "aggregations": ["sum"] }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Daily Cost Detail",
+      "description": "Raw daily cost values per project as reported by the Cost Management API.",
+      "type": "table",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 20 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+          "type": "json",
+          "parser": "backend",
+          "source": "url",
+          "url": "https://console.redhat.com/api/cost-management/v1/reports/openshift/costs/?filter%5Bresolution%5D=daily&start_date=${__from:date:YYYY-MM-DD}&end_date=${__to:date:YYYY-MM-DD}&group_by%5Bproject%5D=*",
+          "url_options": { "method": "GET", "data": "" },
+          "root_selector": "$.data.projects.values.{\"date\": date, \"project\": project, \"cost\": cost.total.value}",
+          "columns": [
+            { "selector": "date", "text": "date", "type": "string" },
+            { "selector": "project", "text": "project", "type": "string" },
+            { "selector": "cost", "text": "cost", "type": "number" }
+          ],
+          "filters": []
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "filterable": true }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "cost" },
+            "properties": [
+              { "id": "unit", "value": "currencyUSD" },
+              { "id": "displayName", "value": "Cost (USD)" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "date" },
+            "properties": [
+              { "id": "displayName", "value": "Date" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "project" },
+            "properties": [
+              { "id": "displayName", "value": "Project" }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [{ "displayName": "Date", "desc": true }],
+        "footer": { "show": false }
+      },
       "transformations": [
         {
           "id": "organize",
           "options": {
             "excludeByName": {},
             "indexByName": {
-              "cost": 2,
               "date": 0,
-              "project": 1
-            },
-            "renameByName": {}
-          }
-        },
-        {
-          "id": "partitionByValues",
-          "options": {
-            "fields": [
-              "project"
-            ],
-            "keepFields": false
+              "project": 1,
+              "cost": 2
+            }
           }
         }
-      ],
-      "type": "timeseries"
+      ]
     }
   ],
-  "refresh": "1h",
-  "schemaVersion": 37,
-  "tags": [
-    "cost-management",
-    "openshift"
-  ],
-  "time": {
-    "from": "now-30d",
-    "to": "now"
-  },
-  "timepicker": {},
-  "timezone": "browser",
-  "title": "OpenShift Daily Costs by Project",
-  "uid": "ocp-costs-by-project",
-  "version": 6
+  "templating": { "list": [] },
+  "annotations": { "list": [] }
 }

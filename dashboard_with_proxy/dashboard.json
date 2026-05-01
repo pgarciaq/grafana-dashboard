@@ -1,134 +1,309 @@
 {
   "uid": "ocp-costs-by-project-proxy",
   "title": "OpenShift Daily Costs by Project (proxy)",
-  "tags": [
-    "cost-management",
-    "openshift"
-  ],
+  "description": "OpenShift cost data per project, fetched via the Flask proxy which handles OAuth2 authentication and returns flat JSON.",
+  "tags": ["openshift", "cost-management"],
   "timezone": "browser",
-  "schemaVersion": 37,
-  "version": 0,
+  "schemaVersion": 39,
+  "version": 1,
   "refresh": "1h",
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
   "panels": [
     {
       "id": 1,
-      "type": "timeseries",
-      "title": "Daily Cost per OpenShift Project",
-      "gridPos": {
-        "h": 22,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
-      "datasource": {
-        "type": "yesoreyeram-infinity-datasource",
-        "uid": "PLACEHOLDER_DS_UID"
-      },
+      "title": "Daily Cost per Project",
+      "description": "Daily cost per OpenShift project for the selected time range. Each bar segment represents one project's cost for that day.",
+      "type": "barchart",
+      "gridPos": { "h": 12, "w": 16, "x": 0, "y": 0 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
       "targets": [
         {
           "refId": "A",
-          "datasource": {
-            "type": "yesoreyeram-infinity-datasource",
-            "uid": "PLACEHOLDER_DS_UID"
-          },
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
           "type": "json",
           "parser": "backend",
           "source": "url",
           "url": "http://localhost:5050/ocp-costs-flat?start_date=${__from:date:YYYY-MM-DD}&end_date=${__to:date:YYYY-MM-DD}",
-          "url_options": {
-            "method": "GET",
-            "data": ""
-          },
+          "url_options": { "method": "GET", "data": "" },
           "root_selector": "",
           "columns": [
-            {
-              "selector": "date",
-              "text": "date",
-              "type": "timestamp"
-            },
-            {
-              "selector": "project",
-              "text": "project",
-              "type": "string"
-            },
-            {
-              "selector": "cost",
-              "text": "cost",
-              "type": "number"
-            }
+            { "selector": "date", "text": "date", "type": "string" },
+            { "selector": "project", "text": "project", "type": "string" },
+            { "selector": "cost", "text": "cost", "type": "number" }
           ],
           "filters": []
-        }
-      ],
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "renameByName": {},
-            "indexByName": {
-              "date": 0,
-              "project": 1,
-              "cost": 2
-            }
-          }
-        },
-        {
-          "id": "partitionByValues",
-          "options": {
-            "fields": [
-              "project"
-            ],
-            "keepFields": false
-          }
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "currencyUSD",
-          "displayName": "${__field.labels.project}",
+          "color": { "mode": "palette-classic" },
           "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 5,
-            "showPoints": "never",
-            "lineInterpolation": "linear"
-          },
-          "color": {
-            "mode": "palette-classic"
-          },
-          "mappings": [],
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "lineWidth": 1,
+            "axisBorderShow": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "auto",
+        "xTickLabelRotation": -45,
+        "xTickLabelSpacing": 0,
+        "showValue": "never",
+        "stacking": "normal",
+        "groupWidth": 0.7,
+        "barWidth": 0.9,
+        "barRadius": 0.1,
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum"] },
+        "xField": "date"
+      },
+      "transformations": [
+        {
+          "id": "groupingToMatrix",
+          "options": {
+            "columnField": "project",
+            "rowField": "date",
+            "valueField": "cost"
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Total Cost This Month",
+      "description": "Total cost across all OpenShift projects for the selected time range.",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 0 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+          "type": "json",
+          "parser": "backend",
+          "source": "url",
+          "url": "http://localhost:5050/ocp-costs-flat?start_date=${__from:date:YYYY-MM-DD}&end_date=${__to:date:YYYY-MM-DD}",
+          "url_options": { "method": "GET", "data": "" },
+          "root_selector": "",
+          "columns": [
+            { "selector": "date", "text": "date", "type": "string" },
+            { "selector": "project", "text": "project", "type": "string" },
+            { "selector": "cost", "text": "cost", "type": "number" }
+          ],
+          "filters": []
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": { "mode": "thresholds" },
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5000 },
+              { "color": "red", "value": 20000 }
             ]
           }
         },
         "overrides": []
       },
       "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true,
-          "calcs": [
-            "lastNotNull",
-            "sum"
-          ]
+        "reduceOptions": { "calcs": ["sum"] },
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "fields": "/^cost$/"
+      },
+      "transformations": []
+    },
+    {
+      "id": 3,
+      "title": "Cost by Project",
+      "description": "Proportional cost breakdown across OpenShift projects for the selected time range.",
+      "type": "piechart",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 6 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+          "type": "json",
+          "parser": "backend",
+          "source": "url",
+          "url": "http://localhost:5050/ocp-costs-flat?start_date=${__from:date:YYYY-MM-DD}&end_date=${__to:date:YYYY-MM-DD}",
+          "url_options": { "method": "GET", "data": "" },
+          "root_selector": "",
+          "columns": [
+            { "selector": "date", "text": "date", "type": "string" },
+            { "selector": "project", "text": "project", "type": "string" },
+            { "selector": "cost", "text": "cost", "type": "number" }
+          ],
+          "filters": []
         }
-      }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["sum"] },
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "tooltip": { "mode": "single" }
+      },
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "project": { "operation": "groupby", "aggregations": [] },
+              "cost": { "operation": "aggregate", "aggregations": ["sum"] }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Cost Trend",
+      "description": "Total daily cost across all projects over the selected time range. Each point is the sum of all project costs for that day.",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+          "type": "json",
+          "parser": "backend",
+          "source": "url",
+          "url": "http://localhost:5050/ocp-costs-flat?start_date=${__from:date:YYYY-MM-DD}&end_date=${__to:date:YYYY-MM-DD}",
+          "url_options": { "method": "GET", "data": "" },
+          "root_selector": "",
+          "columns": [
+            { "selector": "date", "text": "date", "type": "timestamp" },
+            { "selector": "project", "text": "project", "type": "string" },
+            { "selector": "cost", "text": "cost", "type": "number" }
+          ],
+          "filters": []
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "auto",
+            "pointSize": 5,
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "single" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      },
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "date": { "operation": "groupby", "aggregations": [] },
+              "cost": { "operation": "aggregate", "aggregations": ["sum"] }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Daily Cost Detail",
+      "description": "Raw daily cost values per project as reported by the Cost Management API via the Flask proxy.",
+      "type": "table",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 20 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PLACEHOLDER_DS_UID" },
+          "type": "json",
+          "parser": "backend",
+          "source": "url",
+          "url": "http://localhost:5050/ocp-costs-flat?start_date=${__from:date:YYYY-MM-DD}&end_date=${__to:date:YYYY-MM-DD}",
+          "url_options": { "method": "GET", "data": "" },
+          "root_selector": "",
+          "columns": [
+            { "selector": "date", "text": "date", "type": "string" },
+            { "selector": "project", "text": "project", "type": "string" },
+            { "selector": "cost", "text": "cost", "type": "number" }
+          ],
+          "filters": []
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "filterable": true }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "cost" },
+            "properties": [
+              { "id": "unit", "value": "currencyUSD" },
+              { "id": "displayName", "value": "Cost (USD)" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "date" },
+            "properties": [
+              { "id": "displayName", "value": "Date" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "project" },
+            "properties": [
+              { "id": "displayName", "value": "Project" }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [{ "displayName": "Date", "desc": true }],
+        "footer": { "show": false }
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "date": 0,
+              "project": 1,
+              "cost": 2
+            }
+          }
+        }
+      ]
     }
   ],
-  "time": {
-    "from": "now-30d",
-    "to": "now"
-  },
-  "timepicker": {}
+  "templating": { "list": [] },
+  "annotations": { "list": [] }
 }

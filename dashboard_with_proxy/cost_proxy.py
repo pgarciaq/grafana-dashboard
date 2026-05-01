@@ -6,13 +6,14 @@ Accepts start_date and end_date query params (YYYY-MM-DD) so the
 Grafana time picker controls the date range automatically.
 """
 from flask import Flask, jsonify, request
+import os
 import requests
 import time
 
 app = Flask(__name__)
 
-CLIENT_ID = "YOUR_CLIENT_ID"
-CLIENT_SECRET = "YOUR_CLIENT_SECRET"
+CLIENT_ID = os.environ.get("COSTMGMT_CLIENT_ID", "YOUR_CLIENT_ID")
+CLIENT_SECRET = os.environ.get("COSTMGMT_CLIENT_SECRET", "YOUR_CLIENT_SECRET")
 TOKEN_URL = "https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token"
 API_BASE = "https://console.redhat.com/api/cost-management/v1/reports/openshift/costs/"
 
@@ -82,4 +83,8 @@ def health():
 
 
 if __name__ == "__main__":
+    if CLIENT_ID == "YOUR_CLIENT_ID" or CLIENT_SECRET == "YOUR_CLIENT_SECRET":
+        print("WARNING: Using placeholder credentials.", flush=True)
+        print("         Set COSTMGMT_CLIENT_ID and COSTMGMT_CLIENT_SECRET env vars,", flush=True)
+        print("         or edit this file (lines 14-15).", flush=True)
     app.run(host="0.0.0.0", port=5050, debug=False)

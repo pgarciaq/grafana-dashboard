@@ -47,34 +47,59 @@ Red Hat SSO                Cost Management API
 
 A **Red Hat service account** with access to Cost Management is also required.
 
-### Service account credentials (used in this example)
+### Configuring credentials
 
-| Field | Value |
-|-------|-------|
-| Client ID | `YOUR_CLIENT_ID` |
-| Client Secret | `YOUR_CLIENT_SECRET` |
-| Token URL | `https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token` |
-| Scopes | `api.console` |
+**Option A — environment variables + `envsubst`** (recommended, keeps the
+config file clean):
 
-To use different credentials, edit `json_exporter_config.yml` (the `oauth2`
-section under `http_client_config`).
+```bash
+export COSTMGMT_CLIENT_ID="your-client-id"
+export COSTMGMT_CLIENT_SECRET="your-client-secret"
+envsubst < json_exporter_config.yml > /tmp/json_exporter_config.yml
+json_exporter --config.file=/tmp/json_exporter_config.yml
+```
+
+**Option B — edit the file directly:**
+
+Edit `json_exporter_config.yml` and replace the placeholder values in the
+`oauth2` section (lines 17–18):
+
+```yaml
+      oauth2:
+        client_id: "your-client-id"
+        client_secret: "your-client-secret"
+```
+
+json\_exporter reads the config file at startup and handles OAuth2 token
+acquisition and renewal automatically. No credentials are stored in Grafana,
+Prometheus, or `dashboard.json`.
 
 ---
 
 ## Setup
 
-### 1. Start json\_exporter
+### 1. Configure credentials and start json\_exporter
 
 ```bash
-# Option A: binary
-json_exporter --config.file=json_exporter_config.yml
+# Set credentials via environment variables
+export COSTMGMT_CLIENT_ID="your-client-id"
+export COSTMGMT_CLIENT_SECRET="your-client-secret"
 
-# Option B: Docker / Podman
+# Option A: binary (with envsubst)
+envsubst < json_exporter_config.yml > /tmp/json_exporter_config.yml
+json_exporter --config.file=/tmp/json_exporter_config.yml
+
+# Option B: Docker / Podman (with envsubst)
+envsubst < json_exporter_config.yml > /tmp/json_exporter_config.yml
 docker run -d --name json-exporter \
   --network=host \
-  -v "$(pwd)/json_exporter_config.yml:/config.yml:ro" \
+  -v "/tmp/json_exporter_config.yml:/config.yml:ro" \
   quay.io/prometheuscommunity/json-exporter \
   --config.file=/config.yml
+
+# Option C: edit json_exporter_config.yml directly and skip envsubst
+vi json_exporter_config.yml
+json_exporter --config.file=json_exporter_config.yml
 ```
 
 Verify it responds:

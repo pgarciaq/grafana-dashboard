@@ -4,7 +4,14 @@
 # Extracts OpenShift cost metrics from the Cost Management REST API
 # and exposes them as Prometheus metrics.
 #
-# Usage:
+# Usage (option A — environment variables):
+#   export COSTMGMT_CLIENT_ID="your-client-id"
+#   export COSTMGMT_CLIENT_SECRET="your-client-secret"
+#   envsubst < json_exporter_config.yml > /tmp/json_exporter_config.yml
+#   json_exporter --config.file=/tmp/json_exporter_config.yml
+#
+# Usage (option B — edit this file directly):
+#   Replace YOUR_CLIENT_ID and YOUR_CLIENT_SECRET below, then:
 #   json_exporter --config.file=json_exporter_config.yml
 #
 # Prometheus scrapes this exporter via:
@@ -14,8 +21,8 @@ modules:
   ocp_costs:
     http_client_config:
       oauth2:
-        client_id: "YOUR_CLIENT_ID"
-        client_secret: "YOUR_CLIENT_SECRET"
+        client_id: "${COSTMGMT_CLIENT_ID:-YOUR_CLIENT_ID}"
+        client_secret: "${COSTMGMT_CLIENT_SECRET:-YOUR_CLIENT_SECRET}"
         token_url: "https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token"
         scopes:
           - "api.console"

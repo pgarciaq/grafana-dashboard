@@ -7,6 +7,13 @@
 # Usage:
 #   bash import_dashboard.sh [GRAFANA_URL] [USER] [PASSWORD]
 #
+# Environment variables:
+#   COSTMGMT_CLIENT_ID     — Red Hat service account Client ID
+#   COSTMGMT_CLIENT_SECRET — Red Hat service account Client Secret
+#
+# If the env vars are not set, the script falls back to the placeholder
+# values below (lines 22-23). Edit them or export the env vars before running.
+#
 # Defaults:
 #   GRAFANA_URL = http://localhost:3000
 #   USER        = admin
@@ -19,9 +26,15 @@ GF_USER="${2:-admin}"
 GF_PASS="${3:-redhat}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-CLIENT_ID="YOUR_CLIENT_ID"
-CLIENT_SECRET="YOUR_CLIENT_SECRET"
+CLIENT_ID="${COSTMGMT_CLIENT_ID:-YOUR_CLIENT_ID}"
+CLIENT_SECRET="${COSTMGMT_CLIENT_SECRET:-YOUR_CLIENT_SECRET}"
 TOKEN_URL="https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token"
+
+if [ "$CLIENT_ID" = "YOUR_CLIENT_ID" ] || [ "$CLIENT_SECRET" = "YOUR_CLIENT_SECRET" ]; then
+    echo "WARNING: Using placeholder credentials." >&2
+    echo "         Set COSTMGMT_CLIENT_ID and COSTMGMT_CLIENT_SECRET env vars," >&2
+    echo "         or edit this script (lines 22-23)." >&2
+fi
 
 AUTH="${GF_USER}:${GF_PASS}"
 
