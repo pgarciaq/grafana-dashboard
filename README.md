@@ -8,6 +8,8 @@ Three dashboard variants showing **OpenShift cost data per project**, sourced
 from the [Red Hat Cost Management API](https://console.redhat.com/api/cost-management/v1).
 Pick the variant that best fits your infrastructure.
 
+![Dashboard screenshot](OpenShift-Daily-Costs-by-Project-Dashboards-Grafana.png)
+
 ## Repository structure
 
 ```
