@@ -10,7 +10,7 @@
     "version": 1,
     "refresh": "15m",
     "time": {
-      "from": "now-5m",
+      "from": "now-30d",
       "to": "now"
     },
     "fiscalYearStartMonth": 0,
