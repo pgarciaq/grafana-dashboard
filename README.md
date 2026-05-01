@@ -1,5 +1,9 @@
 # OpenShift Daily Costs by Project — Grafana Dashboard
 
+> **Disclaimer:** These are **sample dashboards** provided as-is for
+> demonstration and reference purposes only. They are **not supported by
+> Red Hat**. Use them at your own risk.
+
 Three dashboard variants showing **OpenShift cost data per project**, sourced
 from the [Red Hat Cost Management API](https://console.redhat.com/api/cost-management/v1).
 Pick the variant that best fits your infrastructure.
