@@ -54,11 +54,7 @@ payload = {
         "allowedHosts": [
             "console.redhat.com",
             "https://console.redhat.com",
-            "sso.redhat.com",
-            "localhost:5050",
-            "http://localhost:5050",
-            "127.0.0.1:5050",
-            "http://127.0.0.1:5050"
+            "sso.redhat.com"
         ],
     },
     "secureJsonData": {
@@ -141,5 +137,4 @@ else
 fi
 
 echo ""
-echo "Done. Make sure the proxy is running:"
-echo "  nohup python3 $SCRIPT_DIR/cost_proxy.py > /tmp/cost_proxy.log 2>&1 &"
+echo "Done. Open the dashboard at the URL above."

@@ -80,10 +80,10 @@
           "filters": [],
           "parser": "backend",
           "refId": "A",
-          "root_selector": "",
+          "root_selector": "$.data.projects.values.{\"date\": date, \"project\": project, \"cost\": cost.total.value}",
           "source": "url",
           "type": "json",
-          "url": "http://localhost:5050/ocp-costs-flat",
+          "url": "https://console.redhat.com/api/cost-management/v1/reports/openshift/costs/?filter%5Bresolution%5D=daily&filter%5Btime_scope_units%5D=day&filter%5Btime_scope_value%5D=-30&group_by%5Bproject%5D=*",
           "url_options": {
             "data": "",
             "method": "GET"
@@ -131,5 +131,5 @@
   "timezone": "browser",
   "title": "OpenShift Daily Costs by Project",
   "uid": "ocp-costs-by-project",
-  "version": 4
+  "version": 5
 }
