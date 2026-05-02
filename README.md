@@ -157,6 +157,7 @@ for details.
 
 | | Native (JSONata) | Flask Proxy | json\_exporter + Prometheus |
 |---|---|---|---|
+| **Grafana time picker** | **Yes** — controls date range | **Yes** — controls date range | **No** — fixed 30-day window |
 | External dependencies | None | Python + Flask | json\_exporter + Prometheus |
 | Grafana plugin needed | Infinity v3.x | Infinity v3.x | None (built-in Prometheus) |
 | OAuth2 credentials stored in | Grafana datasource | `cost_proxy.py` | `json_exporter_config.yml` |
@@ -191,13 +192,17 @@ Each variant handles this differently:
 
 ### Time range
 
-All three variants query the Cost Management API for the **last 30 days**
-(`filter[time_scope_value]=-30&filter[time_scope_units]=day`). This ensures
-identical data across all dashboard flavors regardless of which variant you
-use.
-
-> **Note:** The Grafana time picker does **not** change the API query.
-> All panels always show the last 30 days of data as reported by the API.
+- **Native / Proxy:** The Grafana time picker drives the API query via
+  `start_date` and `end_date` parameters (Grafana's `${__from:date:YYYY-MM-DD}`
+  and `${__to:date:YYYY-MM-DD}` variables). Changing the time picker
+  immediately changes the data shown.
+- **json\_exporter:** The API time range is **fixed at 30 days**
+  (`filter[time_scope_value]=-30`) in the Prometheus scrape config. The
+  Grafana time picker does **not** change the underlying data — all panels
+  always show the last 30 days regardless of picker selection. This is a
+  fundamental limitation of the json\_exporter architecture: Prometheus
+  scrapes the API on a fixed schedule and there is no way to pass Grafana
+  variables to the scrape target URL at query time.
 
 ---
 

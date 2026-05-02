@@ -181,12 +181,21 @@ driven by the Grafana time picker). The json\_exporter variant tracks
 *scrape history* — useful for monitoring when cost data changes, but not
 for viewing daily breakdowns (use the bar chart for that).
 
-### API time range — last 30 days
+### API time range — fixed 30-day window
 
 `prometheus_scrape.yml` uses a single scrape job with
-`filter[time_scope_value]=-30&filter[time_scope_units]=day`, matching the
-native and proxy dashboard variants. This ensures **all three dashboard
-flavors show the same data**.
+`filter[time_scope_value]=-30&filter[time_scope_units]=day`.
+
+> **Limitation: the Grafana time picker has no effect on this variant.**
+> Prometheus scrapes the API on a fixed schedule with a fixed query. There
+> is no way to pass Grafana time-picker variables to the Prometheus scrape
+> target URL at query time. All panels always show the last 30 days of data
+> regardless of the time picker selection.
+>
+> The native and proxy variants **do** respect the Grafana time picker
+> (they pass `start_date` / `end_date` directly to the API). If dynamic
+> date range selection is important to you, use one of those variants
+> instead.
 
 > **Why not 90 days?** A single `-90` day query would cover the full
 > retention window, but the Cost Management API returns duplicate
