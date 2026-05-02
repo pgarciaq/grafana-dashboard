@@ -3,6 +3,11 @@
 # Add these jobs to your existing prometheus.yml under scrape_configs:.
 # Adjust localhost references if json_exporter runs on a different host.
 #
+# IMPORTANT: The scrape interval is 15 minutes.  Prometheus's default
+# lookback delta is 5 minutes, so instant queries will return "No data"
+# most of the time.  Start Prometheus with --query.lookback-delta=16m
+# to keep the data visible between scrapes.
+#
 # IMPORTANT: The target URL MUST be set via params.target (not via
 # static_configs.targets + relabel). If you use static_configs with
 # relabel, the & characters in the API query string get parsed as

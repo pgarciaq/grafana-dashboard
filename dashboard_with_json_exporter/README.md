@@ -121,6 +121,23 @@ sudo systemctl reload prometheus
 kill -HUP $(pgrep prometheus)
 ```
 
+> **Important:** The scrape interval is 15 minutes, but Prometheus's default
+> lookback delta is only 5 minutes. This means instant queries (used by most
+> dashboard panels) will return "No data" for 10 out of every 15 minutes.
+> To fix this, start Prometheus with `--query.lookback-delta=16m`:
+>
+> ```bash
+> prometheus --query.lookback-delta=16m --config.file=prometheus.yml
+>
+> # Or with Docker/Podman:
+> docker run -d --network=host \
+>   -v prometheus.yml:/etc/prometheus/prometheus.yml:ro \
+>   -v prometheus-data:/prometheus \
+>   prom/prometheus \
+>   --config.file=/etc/prometheus/prometheus.yml \
+>   --query.lookback-delta=16m
+> ```
+
 After ~15 minutes, verify metrics are flowing:
 
 ```bash
@@ -286,6 +303,7 @@ groups:
 | `ocp_cost_total_usd` not in Prometheus | json\_exporter not scraped yet | Wait 15 min, or check `http://localhost:9090/targets` |
 | Probe returns 401 | OAuth2 credentials wrong or expired | Update `json_exporter_config.yml` oauth2 section |
 | Probe returns 403 | Service account lacks Cost Management access | Verify permissions on console.redhat.com |
+| Dashboard shows "No data" intermittently | Prometheus lookback delta too short for 15m scrape interval | Start Prometheus with `--query.lookback-delta=16m` (see Setup step 2) |
 | Dashboard shows "No data" | Prometheus datasource misconfigured | Re-run `import_dashboard.sh`, check datasource in Grafana |
 | Bar chart shows only 1 bar | API returns only current day's data | Verify the target URL uses `time_scope_value=-30&time_scope_units=day` |
 | `group_by` ignored, no per-project data | URL `&` split across Prometheus params | Use `params.target` in Prometheus config, not `static_configs.targets` + relabel (see `prometheus_scrape.yml`) |
