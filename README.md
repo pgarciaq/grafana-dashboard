@@ -191,13 +191,13 @@ Each variant handles this differently:
 
 ### Time range
 
-- **Native / Proxy:** The Grafana time picker drives the API query via
-  `start_date` and `end_date` parameters (Grafana's `${__from:date:YYYY-MM-DD}`
-  and `${__to:date:YYYY-MM-DD}` variables).
-- **json\_exporter:** Prometheus controls the scrape schedule (every 15 min).
-  The API is queried for the last 30 days. The `date` label from the API
-  response is used as the X-axis in the bar chart (not Prometheus timestamps).
-  Historical data beyond the API's range accumulates in Prometheus's TSDB.
+All three variants query the Cost Management API for the **last 30 days**
+(`filter[time_scope_value]=-30&filter[time_scope_units]=day`). This ensures
+identical data across all dashboard flavors regardless of which variant you
+use.
+
+> **Note:** The Grafana time picker does **not** change the API query.
+> All panels always show the last 30 days of data as reported by the API.
 
 ---
 

@@ -19,7 +19,7 @@
       {
         "id": 1,
         "title": "Daily Cost per Project",
-        "description": "Daily cost per OpenShift project for the current billing month. The X-axis uses the API's date field (not the Prometheus scrape timestamp). Each bar segment represents one project's cost for that day.",
+        "description": "Daily cost per OpenShift project for the last 30 days. The X-axis uses the API's date field (not the Prometheus scrape timestamp). Each bar segment represents one project's cost for that day.",
         "type": "barchart",
         "gridPos": { "h": 12, "w": 16, "x": 0, "y": 0 },
         "datasource": { "type": "prometheus", "uid": "PLACEHOLDER_DS_UID" },
@@ -84,14 +84,14 @@
       {
         "id": 2,
         "title": "Total Cost This Month",
-        "description": "Total cost across all OpenShift projects for the current month, as reported by the Cost Management API.",
+        "description": "Total cost across all OpenShift projects for the last 30 days.",
         "type": "stat",
         "gridPos": { "h": 6, "w": 8, "x": 16, "y": 0 },
         "datasource": { "type": "prometheus", "uid": "PLACEHOLDER_DS_UID" },
         "targets": [
           {
             "refId": "A",
-            "expr": "ocp_cost_total_usd",
+            "expr": "sum(ocp_cost_total_usd)",
             "legendFormat": "Total",
             "instant": true,
             "range": false
@@ -123,7 +123,7 @@
       {
         "id": 3,
         "title": "Cost by Project",
-        "description": "Proportional cost breakdown across OpenShift projects for the current month.",
+        "description": "Proportional cost breakdown across OpenShift projects for the last 30 days.",
         "type": "piechart",
         "gridPos": { "h": 6, "w": 8, "x": 16, "y": 6 },
         "datasource": { "type": "prometheus", "uid": "PLACEHOLDER_DS_UID" },
@@ -160,7 +160,7 @@
         "targets": [
           {
             "refId": "A",
-            "expr": "ocp_cost_total_usd",
+            "expr": "sum(ocp_cost_total_usd)",
             "legendFormat": "Total cost",
             "instant": false,
             "range": true

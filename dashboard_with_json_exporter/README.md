@@ -181,12 +181,18 @@ driven by the Grafana time picker). The json\_exporter variant tracks
 *scrape history* — useful for monitoring when cost data changes, but not
 for viewing daily breakdowns (use the bar chart for that).
 
-### API time range
+### API time range — last 30 days
 
-The Prometheus scrape config requests **the last 30 days** of daily data from
-the API (`filter[time_scope_value]=-30&filter[time_scope_units]=day`). This
-ensures the bar chart always shows ~30 bars. To change the window, edit the
-`target` URL in `prometheus_scrape.yml`.
+`prometheus_scrape.yml` uses a single scrape job with
+`filter[time_scope_value]=-30&filter[time_scope_units]=day`, matching the
+native and proxy dashboard variants. This ensures **all three dashboard
+flavors show the same data**.
+
+> **Why not 90 days?** A single `-90` day query would cover the full
+> retention window, but the Cost Management API returns duplicate
+> `date+project` entries at billing-month boundaries, which json\_exporter
+> rejects. The `-30` day window stays within a single billing period and
+> avoids this issue.
 
 ---
 
@@ -194,7 +200,7 @@ ensures the bar chart always shows ~30 bars. To change the window, edit the
 
 | Metric | Type | Labels | Description |
 |--------|------|--------|-------------|
-| `ocp_cost_total_usd` | gauge | — | Total cost across all projects (last 30 days) |
+| `ocp_cost_total_usd` | gauge | — | Total cost across all projects for the last 30 days |
 | `ocp_project_cost_total_usd` | gauge | `project`, `date` | Total cost per project per day |
 | `ocp_project_cost_raw_usd` | gauge | `project`, `date` | Raw (infrastructure) cost per project per day |
 | `ocp_project_cost_markup_usd` | gauge | `project`, `date` | Markup cost per project per day |

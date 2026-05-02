@@ -27,7 +27,7 @@
           "type": "json",
           "parser": "backend",
           "source": "url",
-          "url": "http://localhost:5050/ocp-costs-flat?start_date=${__from:date:YYYY-MM-DD}&end_date=${__to:date:YYYY-MM-DD}",
+          "url": "http://localhost:5050/ocp-costs-flat",
           "url_options": { "method": "GET", "data": "" },
           "root_selector": "",
           "columns": [
@@ -89,7 +89,7 @@
           "type": "json",
           "parser": "backend",
           "source": "url",
-          "url": "http://localhost:5050/ocp-costs-flat?start_date=${__from:date:YYYY-MM-DD}&end_date=${__to:date:YYYY-MM-DD}",
+          "url": "http://localhost:5050/ocp-costs-flat",
           "url_options": { "method": "GET", "data": "" },
           "root_selector": "",
           "columns": [
@@ -139,7 +139,7 @@
           "type": "json",
           "parser": "backend",
           "source": "url",
-          "url": "http://localhost:5050/ocp-costs-flat?start_date=${__from:date:YYYY-MM-DD}&end_date=${__to:date:YYYY-MM-DD}",
+          "url": "http://localhost:5050/ocp-costs-flat",
           "url_options": { "method": "GET", "data": "" },
           "root_selector": "",
           "columns": [
@@ -193,7 +193,7 @@
           "type": "json",
           "parser": "backend",
           "source": "url",
-          "url": "http://localhost:5050/ocp-costs-flat?start_date=${__from:date:YYYY-MM-DD}&end_date=${__to:date:YYYY-MM-DD}",
+          "url": "http://localhost:5050/ocp-costs-flat",
           "url_options": { "method": "GET", "data": "" },
           "root_selector": "",
           "columns": [
@@ -251,7 +251,7 @@
           "type": "json",
           "parser": "backend",
           "source": "url",
-          "url": "http://localhost:5050/ocp-costs-flat?start_date=${__from:date:YYYY-MM-DD}&end_date=${__to:date:YYYY-MM-DD}",
+          "url": "http://localhost:5050/ocp-costs-flat",
           "url_options": { "method": "GET", "data": "" },
           "root_selector": "",
           "columns": [

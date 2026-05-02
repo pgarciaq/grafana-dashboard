@@ -22,6 +22,14 @@ scrape_configs:
   # Scrape OpenShift cost data via json_exporter's /probe endpoint.
   # Prometheus passes the Cost Management API URL as the "target" param;
   # json_exporter fetches it (with OAuth2) and returns Prometheus metrics.
+  #
+  # The query uses filter[time_scope_value]=-30 (last 30 days), matching
+  # the native and proxy dashboard variants so all three show the same data.
+  #
+  # NOTE: A single -90 day query would cover all retained data, but the
+  # Cost Management API returns duplicate date+project entries at
+  # billing-month boundaries, which json_exporter rejects.  -30 days
+  # stays within a single billing period and avoids this issue.
   - job_name: ocp_costs
     scrape_interval: 15m
     scrape_timeout: 60s
